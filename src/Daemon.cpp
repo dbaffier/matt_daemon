@@ -20,7 +20,8 @@ Daemon::Daemon(void)
 
 void Daemon::getData()
 {
-	struct timeval tv;
+	struct timeval  tv;
+    std::string     msg;
 
     tv.tv_sec = 2;
     tv.tv_usec = 0;
@@ -37,22 +38,57 @@ void Daemon::getData()
                 maxfd = *it;
             }
             retval = select(maxfd + 1, &rfds, NULL, NULL, &tv);
-            if(retval == -1){
-                printf("select error\n");
-            }else if(retval == 0) {
-                printf("not message\n");
-            }else{
-              char buf[1024];
+            if (retval == -1)
+                exit(1);
+            else if(retval == 0)
+                ;
+            else
+            {
+                char buf[1024];
                 memset(buf, 0 ,sizeof(buf));
                 int len = recv(*it, buf, sizeof(buf), 0);
-                // if (len)
-                    // printf("%s\n", buf);
-                write(1, buf, len);
+                msg = "User input : ";
+                msg += buf;
+                Daemon::instance()->Log.Log(LOG_INFO, msg);
+                builtin(buf, *it);
                 (void)len;
+                // send(*it, buf, len, 0);
             }
         }
         sleep(1);
     }
+}
+
+void Daemon::builtin(const char *s, int ss)
+{
+    if (strcmp(s, "log\n") == 0)
+    {
+        int fd = open("/var/log/matt_daemon/matt_daemon.log", O_RDONLY);
+        if (!fd)
+            send(ss, "Could not open fd.\n", 19, 0);
+        else
+        {
+            char    buf[1024];
+            size_t  len;
+
+            memset(buf, 0, sizeof(buf));
+            while ((len = read(fd, buf, 1023)) > 0)
+            {
+                send(ss, buf, len, 0);
+                memset(buf, 0, sizeof(buf));
+            }
+            close(fd);
+        }
+    }
+    else if (strcmp(s, "shutdown\n") == 0)
+    {
+        Daemon::instance()->Log.Log(LOG_INFO, "Shutdown.");
+        close(Daemon::instance()->lock());
+        remove("/var/lock/matt_daemon.lock");
+        exit(0);
+    }
+    else
+        send(ss, "Command not found\n", 18, 0);
 }
 
 void Daemon::getConn()
@@ -61,22 +97,10 @@ void Daemon::getConn()
 	{
         socklen_t   length = sizeof(server_addr);
         int conn = accept(ss, (struct sockaddr*)&server_addr, &length);
-        lst.push_back(conn);
-        // printf("%d\n", conn);
-    }
-}
-
-void Daemon::sendMess()
-{
-    while(1)
-	{
-        char buf[1024];
-        memset(buf, 0 ,sizeof(buf));
-        fgets(buf, sizeof(buf), stdin);
-        std::list<int>::iterator it;
-        for(it = lst.begin(); it != lst.end(); ++it){
-            send(*it, buf, sizeof(buf), 0);
-        }
+        if (lst.size() == 3)
+            close(conn);
+        else
+            lst.push_back(conn);
     }
 }
 
@@ -117,8 +141,6 @@ void Daemon::LaunchServer(void)
     }
 	std::thread t(&Daemon::getConn, this);
 	t.detach();
-	std::thread t1(&Daemon::sendMess, this);
-	t1.detach();
 	std::thread t2(&Daemon::getData, this);
     t2.detach();
     Log.Log(LOG_INFO, "Server created.");
@@ -131,6 +153,12 @@ void Daemon::Daemonize(void)
 	//	https://stackoverflow.com/questions/17954432/creating-a-daemon-in-linux/17955149#17955149
 	pid_t	pid;
 
+    if (getuid())
+    {
+        dprintf(2, "You should run with root privileges. exit\n");
+        exit(1);
+    }
+
     Log.Log(LOG_INFO, "Entering daemon mode.");
 	pid = fork();
 	if (pid < 0)
@@ -139,9 +167,6 @@ void Daemon::Daemonize(void)
 		exit(0);
 	if (setsid() < 0)
 		exit(1);
-	//TODO: Implement a working signal handler */
-    signal(SIGCHLD, SIG_IGN);
-    signal(SIGHUP, SIG_IGN);
 
 	pid = fork();
 	if (pid < 0)
@@ -160,7 +185,8 @@ void Daemon::Daemonize(void)
     if (_lock < 0)
     {
         Log.Log(LOG_ERR, "Can't open :/var/lock/matt_daemon.lock");
-        Log.Log(LOG_INFO, "Quitting.");        exit(1);
+        Log.Log(LOG_INFO, "Quitting.");
+        exit(1);
     }
     if (flock(_lock, LOCK_EX | LOCK_NB) < 0)
     {
@@ -176,5 +202,6 @@ void Daemon::Daemonize(void)
     int i = 0;
     while (++i < 32)
         signal(i, &sig_handler);
+        signal(SIGPIPE, SIG_IGN);
     Log.Log(LOG_INFO, "started. PID:" + std::to_string(getpid()));
 }

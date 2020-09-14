@@ -19,22 +19,12 @@ void Client::Connect(void)
     }
 }
 
-int  Client::CheckBuiltin(const char *s)
-{
-    const char *builtin[2] = { "exit\n", "log\n" }; 
-
-    for (int i = 0; i < 2; i++)
-        if (strcmp(builtin[i], s) == 0)
-            return (1);
-    return (0);
-}
-
 void Client::Talk(void)
 {
     fd_set rfds;
 
-    struct timeval tv;
     int retval, maxfd;
+    int in = 0;
     while (1)
     {
         /*Clear the collection of readable file descriptors*/
@@ -47,44 +37,48 @@ void Client::Talk(void)
         /*Find the largest file descriptor in the file descriptor set*/    
         if(maxfd < ss)
             maxfd = ss;
-        /*Setting timeout time*/
-        tv.tv_sec = 5;
-        tv.tv_usec = 0;
-        /*Waiting for chat*/
-        retval = select(maxfd + 1, &rfds, NULL, NULL, &tv);
+        if (in == 0)
+            write(1, "shell> ", 7);
+        retval =  select(maxfd + 1, &rfds, NULL, NULL, NULL);
         if(retval == -1)
         {
             printf("select Error, client program exit\n");
             break;
         }
-        else if(retval == 0)
-            continue;
         else
         {
             /*The server sent a message.*/
             if(FD_ISSET(ss, &rfds)){
                 char recvbuf[1024];
                 int len;
-                len = recv(ss, recvbuf, sizeof(recvbuf),0);
-                if (len == 0)
+                memset(recvbuf, 0, sizeof(recvbuf));
+                while ((len = recv(ss, recvbuf, sizeof(recvbuf) - 1,0)) >= 1023)
+                    write(1, recvbuf, len);
+                if (len < 0)
                 {
-                    printf("Connection closed.\n");
+                    close(ss);
+                    exit(1);
+                }
+                else if (len == 0)
+                {
+                    write(1, "Connection closed.\n", 19);
                     break ;
                 }
-                // printf("serv msg : [%s]", recvbuf);
                 write(1, recvbuf, len);
-                memset(recvbuf, 0, sizeof(recvbuf));
+                in = 0;
             }
             /*When the user enters the information, he begins to process the information and send it.*/
             if(FD_ISSET(0, &rfds))
             {
                 char sendbuf[1024];
-                fgets(sendbuf, sizeof(sendbuf), stdin);
-                if (CheckBuiltin(sendbuf))
-                    printf("Got it \n");
-                send(ss, sendbuf, strlen(sendbuf),0); //Send out
                 memset(sendbuf, 0, sizeof(sendbuf));
+                fgets(sendbuf, sizeof(sendbuf) - 1, stdin);
+                if (strcmp(sendbuf, "quit\n") == 0)
+                    break ;
+                send(ss, sendbuf, strlen(sendbuf),0);
+                in = 1;
             }
         }
     }
+    close(ss);
 }

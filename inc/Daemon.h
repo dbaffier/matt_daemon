@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#include <net/if.h>
+#include <net/if_dl.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -13,7 +18,9 @@
 #include <thread>
 #include <list>
 #include <sys/file.h>
+#include <sstream>
 #include "Tintin_reporter.h"
+
 
 class Daemon
 {
@@ -21,6 +28,7 @@ class Daemon
         Daemon();
         void                LaunchServer(void);
 		void                Daemonize(void);
+        void                builtin(const char *s, int ss);
 		Tintin_reporter     Log;
         int                 lock(void) { return _lock; }
         static Daemon*      instance() { daemon = (!daemon) ? new Daemon : daemon; return daemon; }

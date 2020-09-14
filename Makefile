@@ -55,8 +55,8 @@ $(OBJS_DIR_BEN)%.o: $(BEN_DIR)%.cpp
 	g++ $(CFLAGS) -o $@ -c $< $(INCS)
 
 clean:
-	rm -rf $(OBJS)
-	rm -rf $(OBJS_BEN)
+	rm -rf $(OBJS_DIR)
+	rm -rf $(OBJS_DIR_BEN)
 
 fclean: clean
 	rm -f $(MATT)
