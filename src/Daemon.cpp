@@ -201,7 +201,9 @@ void Daemon::Daemonize(void)
 	close(STDERR_FILENO);
     int i = 0;
     while (++i < 32)
+    {
         signal(i, &sig_handler);
-        signal(SIGPIPE, SIG_IGN);
+    }
+    signal(SIGPIPE, SIG_IGN);
     Log.Log(LOG_INFO, "started. PID:" + std::to_string(getpid()));
 }

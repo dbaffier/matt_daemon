@@ -6,7 +6,7 @@
 #    By: dbaffier <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2019/10/24 00:18:28 by dbaffier          #+#    #+#              #
-#    Updated: 2020/08/24 20:14:13 by dbaffier         ###   ########.fr        #
+#    Updated: 2020/09/20 12:03:46 by dbaffier         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,7 +14,7 @@ MATT = Matt_daemon
 
 BEN_AFK = Ben_Afk
 
-CFLAGS += -Wall -Werror -Wextra -std=c++11 -pthread
+CFLAGS += -Wall -Werror -Wextra -std=c++11
 
 INC_DIR = inc/
 INCS = -I$(INC_DIR)
@@ -43,7 +43,7 @@ $(OBJS_DIR_BEN):
 	@mkdir -p $@
 
 $(MATT): $(OBJS)
-	g++ $^ -o $@
+	g++ $^ -o $@ -pthread
 
 $(OBJS_DIR)%.o: $(SRCS_DIR)%.cpp
 	g++ $(CFLAGS) -o $@ -c $< $(INCS)

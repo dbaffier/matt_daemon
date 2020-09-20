@@ -3,11 +3,8 @@
 #include <stdio.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <sys/ioctl.h>
 #include <sys/types.h>
-#include <sys/sysctl.h>
 #include <net/if.h>
-#include <net/if_dl.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
@@ -19,6 +16,7 @@
 #include <list>
 #include <sys/file.h>
 #include <sstream>
+#include <signal.h>
 #include "Tintin_reporter.h"
 
 
