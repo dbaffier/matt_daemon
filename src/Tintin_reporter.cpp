@@ -28,7 +28,7 @@ std::string Tintin_reporter::CurrentDateFormatted(void)
 	char 	format[30];
 
 	tm *ltm = localtime(&now);
-	strftime(format, 30, "[%m/%d/%Y-%H:%M:%S]", ltm);
+	strftime(format, 30, "[%d/%m/%Y-%H:%M:%S]", ltm);
 
 	return (std::string(format));
 }

@@ -192,8 +192,8 @@ void Daemon::Daemonize(void)
     {
         Log.Log(LOG_ERR, "Error file locked");
         Log.Log(LOG_INFO, "Quitting.");
-        dprintf(2, "Can't open :/var/lock/matt_daemon.lock\n");
         close(_lock);
+		std::cout << "Can't open :/var/lock/matt_daemon.lock" << std::endl;
         exit(1);
     }
     close(STDIN_FILENO);

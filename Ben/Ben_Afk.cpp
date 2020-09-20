@@ -14,7 +14,7 @@ void Client::Connect(void)
     client_addr.sin_addr.s_addr = inet_addr("127.0.0.1");  /// server ip
     if (connect(ss, (struct sockaddr *)&client_addr, sizeof(client_addr)) < 0)
     {
-        dprintf(2, "Could not connect");
+        dprintf(2, "Could not connect\n");
         exit(1);
     }
 }
@@ -73,7 +73,7 @@ void Client::Talk(void)
                 char sendbuf[1024];
                 memset(sendbuf, 0, sizeof(sendbuf));
                 fgets(sendbuf, sizeof(sendbuf) - 1, stdin);
-                if (strcmp(sendbuf, "quit\n") == 0)
+                if (strcmp(sendbuf, "quit\n") == 0 || strcmp(sendbuf, "quit") == 0)
                     break ;
                 send(ss, sendbuf, strlen(sendbuf),0);
                 in = 1;
